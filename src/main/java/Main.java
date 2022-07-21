@@ -2,6 +2,7 @@ import eu.printingin3d.javascad.basic.Radius;
 import eu.printingin3d.javascad.context.ITagColors;
 import eu.printingin3d.javascad.context.TagColorsBuilder;
 import eu.printingin3d.javascad.coords.Coords3d;
+import eu.printingin3d.javascad.enums.Side;
 import eu.printingin3d.javascad.models.Abstract3dModel;
 import eu.printingin3d.javascad.models.Cube;
 import eu.printingin3d.javascad.models.IModel;
@@ -18,8 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.*;
 
-import static java.util.Arrays.asList;
-
 public class Main {
     public Main() {
     }
@@ -29,13 +28,13 @@ public class Main {
 //        List<Abstract3dModel> parts = new ArrayList<>();
 //        Cube cube = new Cube(new Dims3d(25.0, 10.0, 2.0));
 //        parts.add(cube);
-        int cellAmount = 10;
+        int cellAmount = 6;
 
         int xSize = cellAmount;
         int ySize = cellAmount;
         int zSize = cellAmount;
 
-        double scale = 0.5;
+        double scale = 0.6;
         double size = 10 * scale;
         double thickness = 1 * scale;
         double gap = 5 * scale;
@@ -87,17 +86,15 @@ public class Main {
 
 
         double diameter = size - (thickness * 4);
-        double dent = 0.1 * diameter;
+        double dent = 0.15 * diameter;
         Abstract3dModel sphere = new Difference(new Sphere(Radius.fromDiameter(diameter)), new Cube(diameter).move(Coords3d.zOnly(-diameter + dent)));
-        cubes.add(sphere.move(new Coords3d(size, size, -dent - thickness)));
-        //cubes.add(new Sphere(Radius.fromDiameter(size-(thickness*2))).move(new Coords3d(-(size+thickness), size+thickness, 0).));
+        Abstract3dModel sphereSupport = new Cube(diameter * 0.5).align(Side.BOTTOM_IN_CENTER, cubes.get(0));
+        cubes.add(sphere.move(new Coords3d(0, 0, -(dent) - thickness)));
+        cubes.add(sphereSupport);
         Abstract3dModel model = new Union(cubes);
 
-//        cubeCell.open(CubeCell.CubeSide.BOTTOM);
-//        cubeCell.open(CubeCell.CubeSide.LEFT);
-//        cubeCell.open(CubeCell.CubeSide.RIGHT);
 
-        exportSCAD(asList(model));
+        //exportSCAD(asList(model));
         exportSTL(model);
 
 //        ITagColors tagColors = (new TagColorsBuilder()).addTag(1, new Color(139, 90, 43)).addTag(2, Color.GRAY).buildTagColors();
@@ -108,22 +105,7 @@ public class Main {
 //        FileExporterFactory.createExporter(new File("C:/temp/export-factory-test.stl")).writeToFile(cyl.toCSG(new FacetGenerationContext(tagColors, (FacetGenerationContext)null, 0)).toFacets());
     }
 
-    /*
-           int[] currentPos = randomXYZ(xSize, ySize, zSize);
-        while (visitedCells.size() < xSize * ySize * zSize) {
-            CubeCell currentCube = cellMatrix[currentPos[0]][currentPos[1]][currentPos[2]];
-            int[][] xyzPair = moveAsXYZPair(currentPos, xSize, ySize, zSize);
-            int[] nextPosition = xyzPair[2];
-            int[] direction = xyzPair[1];
-            int[] directionFlipped = flippedDirection(direction);
-            CubeCell nextCube = cellMatrix[nextPosition[0]][nextPosition[1]][nextPosition[2]];
-            currentCube.open(direction);
-            nextCube.open(directionFlipped);
-            visitedCells.add(currentCube);
-            visitedCells.add(nextCube);
-            currentPos = nextPosition;
-        }
-     */
+
     public static void generateMaze(int[][] currentPairing, CubeCell[][][] cellMatrix, Set<CubeCell> visitedCells, int xSize, int ySize, int zSize) {
         if (visitedCells.size() == xSize * ySize * zSize) {
             return;
