@@ -14,10 +14,10 @@ public class CubeCell {
 
     private Set<CubeSide> openCubeSides = new HashSet<>();
 
-    private double size = 10;
-    private double thickness = 1;
-    private double gap = 3;
-    private double width = 2.5;
+    private double size;
+    private double thickness;
+    private double gap;
+    private double width;
 
     private boolean visited = false;
     private boolean start = false;
@@ -84,7 +84,7 @@ public class CubeCell {
         public Face(CubeSide cubeSide) {
             selfOpen = openCubeSides.contains(cubeSide);
             this.cubeSide = cubeSide;
-            if (selfOpen)
+            if (selfOpen || (start && cubeSide == CubeSide.BOTTOM))
                 return;
 
             switch (cubeSide) {
@@ -129,7 +129,7 @@ public class CubeCell {
 
         private Abstract3dModel generateSide() {
 
-            if (selfOpen) {
+            if (selfOpen || (start && cubeSide == CubeSide.BOTTOM)) {
                 double hide = (size / 2.0) - (thickness / 2.0);
                 return new Cube(thickness).move(new Coords3d(hide, hide, hide));
             }
@@ -222,8 +222,8 @@ public class CubeCell {
             Abstract3dModel sideGap;
             side = new Cube(new Dims3d(size, width, thickness));
             if (open) {
-                sideGap = new Cube(new Dims3d(gap, width, thickness));
-                side = side.subtractModel(sideGap);
+//                sideGap = new Cube(new Dims3d(gap, width/2.0, thickness));
+//                side = side.subtractModel(sideGap);
             }
             return side;
         }

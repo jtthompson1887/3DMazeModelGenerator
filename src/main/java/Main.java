@@ -28,17 +28,19 @@ public class Main {
 //        List<Abstract3dModel> parts = new ArrayList<>();
 //        Cube cube = new Cube(new Dims3d(25.0, 10.0, 2.0));
 //        parts.add(cube);
-        int cellAmount = 6;
+        int cellAmount = 7;
 
         int xSize = cellAmount;
         int ySize = cellAmount;
         int zSize = cellAmount;
 
-        double scale = 0.6;
+        double scale = 1;
         double size = 10 * scale;
         double thickness = 1 * scale;
         double gap = 5 * scale;
-        double width = 3.33 * scale;
+        double width = 2 * scale;
+        int startX = cellAmount / 2;
+        int startY = cellAmount / 2;
 
         CubeCell[][][] cellMatrix = new CubeCell[xSize][ySize][zSize];
 
@@ -63,7 +65,7 @@ public class Main {
 //        System.out.print(direction[0]+":"+direction[1]+":"+direction[2]);
 
         HashSet<CubeCell> visitedCells = new HashSet<>();
-        int[] currentPos = randomXYZ(xSize, ySize, zSize);
+        int[] currentPos = new int[]{startX, startY, 0};
         CubeCell currentCube = cellMatrix[currentPos[0]][currentPos[1]][currentPos[2]];
         currentCube.start();
         visitedCells.add(currentCube);
@@ -85,7 +87,7 @@ public class Main {
         }
 
 
-        double diameter = size - (thickness * 4);
+        double diameter = size - (thickness * 3);
         double dent = 0.15 * diameter;
         Abstract3dModel sphere = new Difference(new Sphere(Radius.fromDiameter(diameter)), new Cube(diameter).move(Coords3d.zOnly(-diameter + dent)));
         Abstract3dModel sphereSupport = new Cube(diameter * 0.5).align(Side.BOTTOM_IN_CENTER, cubes.get(0));
