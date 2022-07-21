@@ -20,6 +20,7 @@ public class CubeCell {
     private double width = 2.5;
 
     private boolean visited = false;
+    private boolean start = false;
 
     public CubeCell(double size, double thickness, double gap, double width) {
         this.size = size;
@@ -37,6 +38,11 @@ public class CubeCell {
             new Face(CubeSide.FRONT).generateSide(),
             new Face(CubeSide.BACK).generateSide()
         );
+    }
+
+    public void start() {
+        visited = true;
+        start = true;
     }
 
     public void open(CubeSide side) {

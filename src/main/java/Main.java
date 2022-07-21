@@ -15,10 +15,8 @@ import eu.printingin3d.javascad.vrl.export.FileExporterFactory;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 
@@ -67,18 +65,12 @@ public class Main {
 
         HashSet<CubeCell> visitedCells = new HashSet<>();
         int[] currentPos = randomXYZ(xSize, ySize, zSize);
-        while (visitedCells.size() < xSize * ySize * zSize) {
-            CubeCell currentCube = cellMatrix[currentPos[0]][currentPos[1]][currentPos[2]];
-            int[][] xyzPair = moveAsXYZPair(currentPos, xSize, ySize, zSize);
-            int[] nextPosition = xyzPair[2];
-            int[] direction = xyzPair[1];
-            int[] directionFlipped = flippedDirection(direction);
-            CubeCell nextCube = cellMatrix[nextPosition[0]][nextPosition[1]][nextPosition[2]];
-            currentCube.open(direction);
-            nextCube.open(directionFlipped);
-            visitedCells.add(currentCube);
-            visitedCells.add(nextCube);
-            currentPos = nextPosition;
+        CubeCell currentCube = cellMatrix[currentPos[0]][currentPos[1]][currentPos[2]];
+        currentCube.start();
+        visitedCells.add(currentCube);
+        int[][][] nextPairings = moveAsXYZPair(currentPos, xSize, ySize, zSize);
+        for (int[][] nextPairing : nextPairings) {
+            generateMaze(nextPairing, cellMatrix, visitedCells, xSize, ySize, zSize);
         }
 
 
@@ -116,6 +108,47 @@ public class Main {
 //        FileExporterFactory.createExporter(new File("C:/temp/export-factory-test.stl")).writeToFile(cyl.toCSG(new FacetGenerationContext(tagColors, (FacetGenerationContext)null, 0)).toFacets());
     }
 
+    /*
+           int[] currentPos = randomXYZ(xSize, ySize, zSize);
+        while (visitedCells.size() < xSize * ySize * zSize) {
+            CubeCell currentCube = cellMatrix[currentPos[0]][currentPos[1]][currentPos[2]];
+            int[][] xyzPair = moveAsXYZPair(currentPos, xSize, ySize, zSize);
+            int[] nextPosition = xyzPair[2];
+            int[] direction = xyzPair[1];
+            int[] directionFlipped = flippedDirection(direction);
+            CubeCell nextCube = cellMatrix[nextPosition[0]][nextPosition[1]][nextPosition[2]];
+            currentCube.open(direction);
+            nextCube.open(directionFlipped);
+            visitedCells.add(currentCube);
+            visitedCells.add(nextCube);
+            currentPos = nextPosition;
+        }
+     */
+    public static void generateMaze(int[][] currentPairing, CubeCell[][][] cellMatrix, Set<CubeCell> visitedCells, int xSize, int ySize, int zSize) {
+        if (visitedCells.size() == xSize * ySize * zSize) {
+            return;
+        }
+        int[] currentPos = currentPairing[0];
+        CubeCell currentCube = cellMatrix[currentPos[0]][currentPos[1]][currentPos[2]];
+        int[] nextPos = currentPairing[2];
+        CubeCell nextCube = cellMatrix[nextPos[0]][nextPos[1]][nextPos[2]];
+
+        if (nextCube.isVisited())
+            return;
+
+        int[] direction = currentPairing[1];
+        int[] directionFlipped = flippedDirection(direction);
+        currentCube.open(direction);
+        nextCube.open(directionFlipped);
+        visitedCells.add(nextCube);
+
+        int[][][] nextPairings = moveAsXYZPair(nextPos, xSize, ySize, zSize);
+        for (int[][] nextPairing : nextPairings) {
+            generateMaze(nextPairing, cellMatrix, visitedCells, xSize, ySize, zSize);
+        }
+
+    }
+
     public static int[][] obtainXYZPair(int xSize, int ySize, int zSize) {
         int[][] XYZpair = new int[3][2];
         boolean done = false;
@@ -134,21 +167,20 @@ public class Main {
         return XYZpair;
     }
 
-    public static int[][] moveAsXYZPair(int[] position, int xSize, int ySize, int zSize) {
-        int[][] XYZpair = new int[3][2];
-        boolean done = false;
-        while (!done) {
-            int direction[] = randomDirection();
+    public static int[][][] moveAsXYZPair(int[] position, int xSize, int ySize, int zSize) {
+        List<int[][]> goodList = new ArrayList<>();
+        int[][] directions = randomDirections();
+        for (int i = 0; i < directions.length; i++) {
+            int[] direction = directions[i];
             int[] otherXYZ = applyDirection(position.clone(), direction);
             boolean goodBounds = checkXYZBounds(otherXYZ, xSize, ySize, zSize);
             if (goodBounds) {
-                XYZpair[0] = position;
-                XYZpair[1] = direction;
-                XYZpair[2] = otherXYZ;
-                done = true;
+                int[][] goodPair = new int[][]{position, direction, otherXYZ};
+                goodList.add(goodPair);
             }
         }
-        return XYZpair;
+
+        return goodList.toArray(new int[goodList.size()][][]);
     }
 
     public static int[] flippedDirection(int[] direction) {
@@ -188,6 +220,31 @@ public class Main {
         int[] direction = new int[]{0, 0, 0};
         direction[position] = value;
         return direction;
+    }
+
+    public static int[][] randomDirections() {
+        int[][] directions = new int[][]{
+            new int[]{0, 0, 1},
+            new int[]{0, 0, -1},
+            new int[]{0, 1, 0},
+            new int[]{0, -1, 0},
+            new int[]{1, 0, 0},
+            new int[]{-1, 0, 0},
+        };
+        shuffleArray(directions);
+        return directions;
+    }
+
+    private static void shuffleArray(int[][] array) {
+        int index;
+        int[] temp;
+        Random random = new Random();
+        for (int i = array.length - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            temp = array[index];
+            array[index] = array[i];
+            array[i] = temp;
+        }
     }
 
     public static int[] applyDirection(int[] position, int[] direction) {
