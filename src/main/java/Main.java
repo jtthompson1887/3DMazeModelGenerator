@@ -10,6 +10,7 @@ import eu.printingin3d.javascad.models.Sphere;
 import eu.printingin3d.javascad.tranzitions.Difference;
 import eu.printingin3d.javascad.tranzitions.Union;
 import eu.printingin3d.javascad.utils.SaveScadFiles;
+import eu.printingin3d.javascad.vrl.Facet;
 import eu.printingin3d.javascad.vrl.FacetGenerationContext;
 import eu.printingin3d.javascad.vrl.export.FileExporterFactory;
 
@@ -18,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     public Main() {
@@ -28,17 +30,17 @@ public class Main {
 //        List<Abstract3dModel> parts = new ArrayList<>();
 //        Cube cube = new Cube(new Dims3d(25.0, 10.0, 2.0));
 //        parts.add(cube);
-        int cellAmount = 7;
+        int cellAmount = 50;
 
         int xSize = cellAmount;
         int ySize = cellAmount;
         int zSize = cellAmount;
 
-        double scale = 1;
+        double scale = 1.66;
         double size = 10 * scale;
         double thickness = 1 * scale;
         double gap = 5 * scale;
-        double width = 2 * scale;
+        double width = 1.75 * scale;
         int startX = cellAmount / 2;
         int startY = cellAmount / 2;
 
@@ -89,15 +91,19 @@ public class Main {
 
         double diameter = size - (thickness * 3);
         double dent = 0.15 * diameter;
-        Abstract3dModel sphere = new Difference(new Sphere(Radius.fromDiameter(diameter)), new Cube(diameter).move(Coords3d.zOnly(-diameter + dent)));
-        Abstract3dModel sphereSupport = new Cube(diameter * 0.5).align(Side.BOTTOM_IN_CENTER, cubes.get(0));
-        cubes.add(sphere.move(new Coords3d(0, 0, -(dent) - thickness)));
-        cubes.add(sphereSupport);
-        Abstract3dModel model = new Union(cubes);
+        Abstract3dModel sphere = new Difference(new Sphere(Radius.fromDiameter(diameter)), new Cube(diameter).move(Coords3d.zOnly(-diameter + dent))).move(new Coords3d(size * startX, size * startY, -(dent) - thickness));
+        Abstract3dModel sphereSupport = new Cube(diameter * 0.5).align(Side.BOTTOM_IN_CENTER, cubes.get(0).move(new Coords3d(size * startX, size * startY, 0d)));
+        sphere = new Union(sphere, sphereSupport);
+        cubes.add(sphere);
+
+        ITagColors tagColors = (new TagColorsBuilder()).addTag(1, new Color(139, 90, 43)).addTag(2, Color.GRAY).buildTagColors();
+        FacetGenerationContext generationContext = new FacetGenerationContext(tagColors, null, 0);
+        List<Facet> facets = cubes.stream().flatMap(cube -> cube.toCSG(generationContext).toFacets().stream()).collect(Collectors.toList());
+        //Abstract3dModel model = new Union(cubes);
 
 
         //exportSCAD(asList(model));
-        exportSTL(model);
+        exportSTL(facets);
 
 //        ITagColors tagColors = (new TagColorsBuilder()).addTag(1, new Color(139, 90, 43)).addTag(2, Color.GRAY).buildTagColors();
 //        Abstract3dModel cyl = (new Difference((new Cylinder(20.0, 5.0)).withTag(1), (new Cylinder(21.0, 2.0)).withTag(2))).moves(Arrays.asList(Coords3d.xOnly(-20.0), Coords3d.xOnly(20.0)));
@@ -240,6 +246,11 @@ public class Main {
 
     public static void exportSCAD(List<IModel> models) throws IOException {
         (new SaveScadFiles(new File("C:/temp"))).addModels("test.scad", models).saveScadFiles();
+    }
+
+    public static void exportSTL(List<Facet> facets) throws IOException {
+        ITagColors tagColors = (new TagColorsBuilder()).addTag(1, new Color(139, 90, 43)).addTag(2, Color.GRAY).buildTagColors();
+        FileExporterFactory.createExporter(new File("C:/temp/export-factory-test.stl")).writeToFile(facets);
     }
 
     public static void exportSTL(IModel model) throws IOException {

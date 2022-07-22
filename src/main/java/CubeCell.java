@@ -221,6 +221,7 @@ public class CubeCell {
             Abstract3dModel side;
             Abstract3dModel sideGap;
             side = new Cube(new Dims3d(size, width, thickness));
+
             if (open) {
 //                sideGap = new Cube(new Dims3d(gap, width/2.0, thickness));
 //                side = side.subtractModel(sideGap);
