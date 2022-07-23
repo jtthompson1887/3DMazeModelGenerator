@@ -19,8 +19,9 @@ public class CubeCell {
     private double gap;
     private double width;
 
-    private boolean visited = false;
+    private int visited = 0;
     private boolean start = false;
+    private boolean finish = false;
 
     public CubeCell(double size, double thickness, double gap, double width) {
         this.size = size;
@@ -41,16 +42,20 @@ public class CubeCell {
     }
 
     public void start() {
-        visited = true;
+        visited = 1;
         start = true;
+    }
+
+    public void finish() {
+        finish = true;
     }
 
     public void open(CubeSide side) {
         openCubeSides.add(side);
-        visited = true;
+        visited += 1;
     }
 
-    public boolean isVisited() {
+    public int visited() {
         return visited;
     }
 
@@ -84,7 +89,7 @@ public class CubeCell {
         public Face(CubeSide cubeSide) {
             selfOpen = openCubeSides.contains(cubeSide);
             this.cubeSide = cubeSide;
-            if (selfOpen || (start && cubeSide == CubeSide.BOTTOM))
+            if (selfOpen || (start && cubeSide == CubeSide.BOTTOM) || (finish && cubeSide == CubeSide.TOP))
                 return;
 
             switch (cubeSide) {
@@ -129,7 +134,7 @@ public class CubeCell {
 
         private Abstract3dModel generateSide() {
 
-            if (selfOpen || (start && cubeSide == CubeSide.BOTTOM)) {
+            if (selfOpen || (start && cubeSide == CubeSide.BOTTOM) || (finish && cubeSide == CubeSide.TOP)) {
                 double hide = (size / 2.0) - (thickness / 2.0);
                 return new Cube(thickness).move(new Coords3d(hide, hide, hide));
             }
@@ -172,10 +177,16 @@ public class CubeCell {
                     x += movement;
                 }
                 case FRONT -> {
+                    /*
                     y -= movement;
                     xRotation = -90;
                     yRotation = 180;
                     zRotation = 0;
+                     */
+                    y -= movement;
+                    xRotation = -90;
+                    yRotation = 180;
+                    zRotation = 180;
                 }
                 case BACK -> {
                     xRotation = 90;
@@ -194,37 +205,41 @@ public class CubeCell {
             List<Abstract3dModel> faceParts = new ArrayList<>();
             double movement = (size / 2.0) - (width / 2.0);
 
+            boolean isVertical = cubeSide == CubeSide.LEFT || cubeSide == CubeSide.RIGHT || cubeSide == CubeSide.FRONT || cubeSide == CubeSide.BACK;
+
             //bottom
-            Abstract3dModel bottom = createEdge(bottomOpen).move(Coords3d.yOnly(-movement));
+            Abstract3dModel bottom = createEdge(bottomOpen, false).move(Coords3d.yOnly(-movement));
             faceParts.add(bottom);
 
             //top
-            Abstract3dModel top = createEdge(topOpen).move(Coords3d.yOnly(movement));
+            Abstract3dModel top = createEdge(topOpen, false).move(Coords3d.yOnly(movement));
             faceParts.add(top);
 
             //left
-            Abstract3dModel left = createEdge(leftOpen)
-                .rotate(Angles3d.zOnly(90.0))
+            Abstract3dModel left = createEdge(leftOpen, isVertical)
+                .rotate(new Angles3d(0, 0, 90.0))
                 .move(Coords3d.xOnly(-movement));
             faceParts.add(left);
 
             //right
-            Abstract3dModel right = createEdge(rightOpen)
-                .rotate(Angles3d.zOnly(90.0))
+            Abstract3dModel right = createEdge(rightOpen, isVertical)
+                .rotate(new Angles3d(0, 0, -90.0))
                 .move(Coords3d.xOnly(movement));
             faceParts.add(right);
 
             return new Union(faceParts);
         }
 
-        private Abstract3dModel createEdge(boolean open) {
+        private Abstract3dModel createEdge(boolean open, boolean vertical) {
             Abstract3dModel side;
             Abstract3dModel sideGap;
             side = new Cube(new Dims3d(size, width, thickness));
-
+            double verticalFactor = vertical ? 1.1 : 1.0;
             if (open) {
-//                sideGap = new Cube(new Dims3d(gap, width/2.0, thickness));
-//                side = side.subtractModel(sideGap);
+                sideGap = new Cube(new Dims3d(gap, width / verticalFactor, thickness));
+                if (vertical)
+                    sideGap = sideGap.move(Coords3d.yOnly(-width / verticalFactor / 2));
+                side = side.subtractModel(sideGap);
             }
             return side;
         }
