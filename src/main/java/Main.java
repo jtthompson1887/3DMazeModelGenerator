@@ -114,14 +114,19 @@ public class Main {
         }
 
 
-        double diameter = size - (thickness * 3);
+        double diameter = size - (thickness * 2) + 0.4;
         double dent = 0.15 * diameter;
         Coords3d sphereMovement = new Coords3d(size * (xSize - startX - 1), size * (ySize - startY - 1), 0d);
         Abstract3dModel sphere = new Difference(new Sphere(Radius.fromDiameter(diameter)), new Cube(diameter)
             .move(Coords3d.zOnly(-diameter + dent)))
             .move(new Coords3d(0, 0, -(dent) - thickness))
             .move(sphereMovement);
-        Abstract3dModel sphereSupport = new Cube(diameter * 0.5).align(Side.BOTTOM_IN_CENTER, cubes.get(0).move(sphereMovement));
+        Abstract3dModel sphereSupport = new Cube(diameter * 0.5).move(sphereMovement);
+        if (!cubes.isEmpty()) {
+            sphereSupport = sphereSupport.align(Side.BOTTOM_IN_CENTER, cubes.get(0).move(sphereMovement));
+        } else {
+            sphere = sphere.align(Side.BOTTOM_IN_CENTER, sphereSupport).move(Coords3d.zOnly(dent / 2));
+        }
         sphere = new Union(sphere, sphereSupport);
         if (doBall)
             cubes.add(sphere);
